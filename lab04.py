@@ -59,6 +59,7 @@ def main():
         two_dimension_list = read_maze()
         ## This is the ORIGINAL START POSITION
         current_start_location = find_start(two_dimension_list)
+        ORIGINAL_START_POINT = find_start(two_dimension_list)
         user_wants_to_quit = False
 
 #
@@ -101,7 +102,7 @@ def main():
             # Before applying to the current location, first check if this would cause a collision
             current_maze_row_index, current_maze_column_index = current_start_location[0] + x_increment, current_start_location[1] + y_increment
             # Check the new respective location
-            if(two_dimension_list[current_maze_row_index][current_maze_column_index] == " " or two_dimension_list[current_maze_row_index][current_maze_column_index] == "X" ):
+            if(two_dimension_list[current_maze_row_index][current_maze_column_index] == " " or two_dimension_list[current_maze_row_index][current_maze_column_index] == "X" or two_dimension_list[current_maze_row_index][current_maze_column_index] == "s" ):
                 # Because its in here this means its valid so take the current spot and assign it as whitespace
                 # This is to restore its original state/character
                 two_dimension_list[current_start_location[0]][current_start_location[1]] = " "
@@ -113,9 +114,19 @@ def main():
                 current_start_location[0] = current_maze_row_index
                 current_start_location[1] = current_maze_column_index
 
-                # Insert the indicator
+                #Insert the original 'S' position
+                two_dimension_list[ORIGINAL_START_POINT[0]][ORIGINAL_START_POINT[1]] = "s"
+
+                # Insert the indicator, overrides the previous
                 two_dimension_list[current_maze_row_index][current_maze_column_index] = "X"
+
             elif(two_dimension_list[current_maze_row_index][current_maze_column_index] == "f"):
+                two_dimension_list[current_start_location[0]][current_start_location[1]] = " "
+
+                current_start_location[0] = current_maze_row_index
+                current_start_location[1] = current_maze_column_index
+                two_dimension_list[current_maze_row_index][current_maze_column_index] = "X"
+                display_maze(two_dimension_list, current_start_location)
                 print("Congratulations! You solved the maze.")
                 break
             else:
