@@ -1,155 +1,144 @@
-from check_input import get_yes_no
+"""
+LAB #4
+    09/15/2025
+    Student 1: Jimmy Le
+    Student 2: Daniel McCray
 
-def read_maze():
-    maze_file = open("maze.txt", "r")
-    file_lines = maze_file.readlines()
-    one_dimension_list = []
+    File IO: Create a program that allows the user to solve a maze that is read in from a file. The user will 
+    begin at the starting point (‘s’) of the maze and will be able to move up, down, left, or right to 
+    move through the maze. When the user reaches the finish (‘f’), they have solved the maze
+"""
 
-    for line in file_lines:
-        one_dimension_list.append(list(line.strip("\n")))
-    return one_dimension_list
+import check_input
+
+def read_maze(file_name):
+    """
+    Read a maze file into a 2D list of characters.
+    Only the trailing newline is removed so spaces inside rows are preserved.
+    """
+    maze = []
+    with open(file_name, 'r', encoding='utf-8') as f:
+        for line in f:
+            # Keep spaces intact
+            row = list(line.rstrip('\n'))
+            if row:  # Ignore completely empty lines
+                maze.append(row)
+
+    if not maze:
+        raise ValueError('Maze file is empty.')
+
+    # Verify the maze is rectangular and all rows are the same length
+    width = len(maze[0])
+    for r in maze:
+        if len(r) != width:
+            raise ValueError('All rows in the maze must be the same length.')
+
+    return maze
 
 
 def find_start(maze):
+    """
+    Find the starting position 's' in the maze.
+    """
+    for i, row in enumerate(maze):
+        for j, cell in enumerate(row):
+            if cell == 's':
+                return [i, j]  # returns a list
+    return None
 
-    found_start = False
-    row_index = 0
-    for line in maze:
-        column_index = 0
-        for character in line:
-            
-            if character == "s":
-                found_start = True
-                break
-                
-            column_index += 1
-        if found_start == True:
-            break
-
-        row_index += 1
-    
-    #print(f"Found start at " + str(row_index)+", " + str(column_index))
-    return [row_index, column_index]
 
 def display_maze(maze, loc):
     """
-    ? Given the current maze re-init it with the users location
-    ? Then display it
+    Display the maze with the current location marked with 'X'.
     """
-    maze[loc[0]][loc[1]] = "X"
-    for row in maze:
-        current_buffer = ""
-        for character in row:
-           current_buffer = current_buffer + character
-        print(current_buffer)
-
-        
-
-
-
+    pr, pc = loc
+    for r, row in enumerate(maze):
+        line = []
+        for c, ch in enumerate(row):
+            if r == pr and c == pc:
+                line.append('X')
+            else:
+                line.append(ch)
+        print(''.join(line))
+    print()  # blank line for readability
 
 
 def main():
     """
-    ? element access is [row][column]
+    Loads the maze from 'maze.txt'
+    Checks for start 's' and at least one finish 'f'
+    Prompts the user to move until they reach 'f'
     """
+    file_name = "maze.txt"
+    try:
+        maze = read_maze(file_name)
+    except FileNotFoundError:
+        print(f'Could not open "{file_name}". Make sure it is in the same folder as this program.')
+        return
+    except ValueError as e:
+        print(f'Maze error: {e}')
+        return
+
+    start = find_start(maze)
+    if start is None:
+        print("Maze is missing a start cell 's'.")
+        return
+
+    # Ensure there is at least one finish 'f' somewhere in the maze
+    has_finish = any('f' in row for row in maze)
+    if not has_finish:
+        print("Maze is missing a finish cell 'f'.")
+        return
+
+    # Current location as a list [row, col] to allow in-place updates
+    loc = [start[0], start[1]]
+
+    print("Welcome to the Maze Game!")
+    display_maze(maze, (loc[0], loc[1]))
 
     while True:
-        ## This is THE MAZE
-        two_dimension_list = read_maze()
-        ## This is the ORIGINAL START POSITION
-        current_start_location = find_start(two_dimension_list)
-        ORIGINAL_START_POINT = find_start(two_dimension_list)
-        user_wants_to_quit = False
+        # Win check at the start of each loop
+        if maze[loc[0]][loc[1]] == 'f':
+            print("Congratulations, you solved the maze!")
+            break
 
-#
-        #print("-Maze Solver-")
-#
+        # Prompt user: integers 1–4 only (validated by check_input module)
+        choice = check_input.get_int_range(
+            "1. Go North\n2. Go South\n3. Go East\n4. Go West\nEnter choice: ",
+            1, 4
+        )
 
-        #if maze[loc[0]][loc[1]] == 'f':
-        #    print("Congratulations, you solved the maze!")
-        #    break
-        while True:
-            ##? Print the initial maze state
-            display_maze(two_dimension_list, current_start_location)
+        # Normalize numeric choices to letter directions
+        mapping = {1: 'n', 2: 's', 3: 'e', 4: 'w'}
+        move = mapping[choice]
 
-            move = input("1. Go North\n2. Go South\n3. Go East\n4. Go West\nEnter choice: ").strip().lower()
-            if move not in ('1', '2', '3', '4',):
-                print("Invalid input - enter 1-4")
-                continue
+        # Translate direction to row/col deltas
+        dr, dc = 0, 0
+        if move == 'n':
+            dr = -1
+        elif move == 's':
+            dr = 1
+        elif move == 'e':
+            dc = 1
+        elif move == 'w':
+            dc = -1
 
+        nr, nc = loc[0] + dr, loc[1] + dc
 
-            x_increment, y_increment = 0, 0
-            """
-            ! Directions Up & Down are inversed because of the way 2d matrix works
-            ! To the human eye we see north as up but via index is the opposite
-            """
-            if move == '1':
-                #  y value = 1 because they want up
-               # y_increment = 1
-               y_increment = -1
-            elif move == '2':
-                # y value = -1 because they want down
-               # y_increment = -1
-                y_increment = 1
-            elif  move == '3':
-                # x value = 1 because they want right
-                x_increment = 1
-            elif move == '4':
-                # x value = -1 because they want left
-                x_increment = -1
+        # Bounds check
+        if not (0 <= nr < len(maze) and 0 <= nc < len(maze[0])):
+            print("Cannot move outside the maze.")
+            continue
 
-            # Before applying to the current location, first check if this would cause a collision
-            current_maze_row_index, current_maze_column_index = current_start_location[0] + x_increment, current_start_location[1] + y_increment
-            # Check the new respective location
-            if(two_dimension_list[current_maze_row_index][current_maze_column_index] == " " or two_dimension_list[current_maze_row_index][current_maze_column_index] == "X" or two_dimension_list[current_maze_row_index][current_maze_column_index] == "s" ):
-                # Because its in here this means its valid so take the current spot and assign it as whitespace
-                # This is to restore its original state/character
-                two_dimension_list[current_start_location[0]][current_start_location[1]] = " "
+        # Wall check
+        if maze[nr][nc] == '*':
+            print("Cannot move into a wall.")
+            continue
 
-                # valid location and can move here
-                #print(f"valid location, character is ({str(two_dimension_list[current_maze_row_index][current_maze_column_index])})" )
-
-                # Set the current location to the new location
-                current_start_location[0] = current_maze_row_index
-                current_start_location[1] = current_maze_column_index
-
-                #Insert the original 'S' position
-                two_dimension_list[ORIGINAL_START_POINT[0]][ORIGINAL_START_POINT[1]] = "s"
-
-                # Insert the indicator, overrides the previous
-                two_dimension_list[current_maze_row_index][current_maze_column_index] = "X"
-
-            elif(two_dimension_list[current_maze_row_index][current_maze_column_index] == "f"):
-                two_dimension_list[current_start_location[0]][current_start_location[1]] = " "
-
-                current_start_location[0] = current_maze_row_index
-                current_start_location[1] = current_maze_column_index
-                two_dimension_list[current_maze_row_index][current_maze_column_index] = "X"
-                display_maze(two_dimension_list, current_start_location)
-                print("Congratulations! You solved the maze.")
-                break
-            else:
-                print(f"invalid location, you can't go there" )
-
-        if get_yes_no("Would You like to play again?  "):
-         print("Wants to play again")
-        else:
-         print("Goodbye!")
-         break  
-    
-
-    
-
-
-
+        # Apply valid move and re-display
+        loc[0], loc[1] = nr, nc
+        display_maze(maze, (loc[0], loc[1]))
 
 
 if __name__ == "__main__":
     main()
-
-
-    # Up = north
-    # Left = west
-    # Right = east
-    # Down = south
